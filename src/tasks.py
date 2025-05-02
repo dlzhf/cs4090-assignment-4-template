@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 DEFAULT_TASKS_FILE = os.path.join(os.path.dirname(__file__), "tasks.json")
 
 def _parse_due(task):
-    return datetime.strptime(task["due_date"], "%Y-%m-%d")
-
+    return datetime.fromisoformat(task["due_date"])
+    
 def load_tasks(file_path=None):
     """
     Load tasks from a JSON file.
