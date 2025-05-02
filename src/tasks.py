@@ -1,11 +1,14 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # File path for task storage
-DEFAULT_TASKS_FILE = "tasks.json"
+DEFAULT_TASKS_FILE = os.path.join(os.path.dirname(__file__), "tasks.json")
 
-def load_tasks(file_path=DEFAULT_TASKS_FILE):
+def _parse_due(task):
+    return datetime.strptime(task["due_date"], "%Y-%m-%d")
+
+def load_tasks(file_path=None):
     """
     Load tasks from a JSON file.
     
@@ -15,17 +18,18 @@ def load_tasks(file_path=DEFAULT_TASKS_FILE):
     Returns:
         list: List of task dictionaries, empty list if file doesn't exist
     """
+    if file_path is None:
+        file_path = DEFAULT_TASKS_FILE
     try:
         with open(file_path, "r") as f:
             return json.load(f)
     except FileNotFoundError:
         return []
     except json.JSONDecodeError:
-        # Handle corrupted JSON file
         print(f"Warning: {file_path} contains invalid JSON. Creating new tasks list.")
         return []
 
-def save_tasks(tasks, file_path=DEFAULT_TASKS_FILE):
+def save_tasks(tasks, file_path=None):
     """
     Save tasks to a JSON file.
     
@@ -33,6 +37,8 @@ def save_tasks(tasks, file_path=DEFAULT_TASKS_FILE):
         tasks (list): List of task dictionaries
         file_path (str): Path to save the JSON file
     """
+    if file_path is None:
+        file_path = DEFAULT_TASKS_FILE
     with open(file_path, "w") as f:
         json.dump(tasks, f, indent=2)
 
@@ -123,3 +129,26 @@ def get_overdue_tasks(tasks):
         if not task.get("completed", False) and 
            task.get("due_date", "") < today
     ]
+
+def clear_completed_tasks(tasks):
+    """
+    Return only the tasks that are not completed.
+    """
+    return [task for task in tasks if not task.get("completed", False)]
+
+def sort_tasks_by_due_date(tasks, ascending=True):
+    return sorted(tasks, key=_parse_due, reverse=not ascending)
+
+def postpone_task_due_date(tasks, task_id, days):
+    """
+    Return a new list where the matching task’s due_date is pushed forward by `days`.
+    """
+    updated = []
+    for task in tasks:
+        if task["id"] == task_id:
+            orig = _parse_due(task)
+            new_date = (orig + timedelta(days=days)).strftime("%Y-%m-%d")
+            updated.append({**task, "due_date": new_date})
+        else:
+            updated.append(task)
+    return updated
