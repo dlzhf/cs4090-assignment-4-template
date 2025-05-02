@@ -6,7 +6,13 @@ from datetime import datetime, timedelta
 DEFAULT_TASKS_FILE = os.path.join(os.path.dirname(__file__), "tasks.json")
 
 def _parse_due(task):
-    return datetime.fromisoformat(task["due_date"])
+    s = task["due_date"]
+    year, month, day = s.split("-")
+    # pad year to 4 digits
+    if len(year) < 4:
+        year = year.zfill(4)
+    iso = f"{year}-{month}-{day}"
+    return datetime.fromisoformat(iso)
     
 def load_tasks(file_path=None):
     """
